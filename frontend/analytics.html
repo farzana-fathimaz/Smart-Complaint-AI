@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics — CSM</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .analytics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+    .chart-grid     { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">CQ</div>
+    <div><div class="logo-text">ComplaintIQ</div><div class="logo-sub">SMART MANAGEMENT</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="index.html"><span class="icon">⊞</span> Dashboard</a>
+    <a class="nav-item" href="index.html"><span class="icon">⚑</span> Complaints</a>
+    <a class="nav-item" href="index.html"><span class="icon">▦</span> Departments</a>
+    <a class="nav-item" href="index.html"><span class="icon">♟</span> Staff</a>
+    <div class="nav-section-label" style="margin-top:12px">Tools</div>
+    <a class="nav-item" href="ai-assistant.html"><span class="icon">🤖</span> AI Assistant</a>
+    <a class="nav-item active" href="analytics.html"><span class="icon">📊</span> Analytics</a>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <div class="topbar-title">Analytics</div>
+    <div class="topbar-actions"><div class="user-avatar">AD</div></div>
+  </header>
+  <div class="page-content">
+    <div class="page-header">
+      <div><h1>Complaint Analytics</h1><p>Visual insights into complaint trends</p></div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="analytics-grid">
+      <div class="stat-card"><div><div class="stat-label">Total Complaints</div><div class="stat-value" id="a-total">—</div></div><div class="stat-icon icon-blue">📋</div></div>
+      <div class="stat-card"><div><div class="stat-label">Resolution Rate</div><div class="stat-value" id="a-rate">—</div></div><div class="stat-icon icon-green">✅</div></div>
+      <div class="stat-card"><div><div class="stat-label">High Priority</div><div class="stat-value" id="a-high">—</div></div><div class="stat-icon icon-amber">🔴</div></div>
+    </div>
+
+    <!-- Chart Grid -->
+    <div class="chart-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Status Distribution</div></div>
+        <div class="card-body"><canvas id="statusChart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Priority Breakdown</div></div>
+        <div class="card-body"><canvas id="priorityChart2" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Department Load</div></div>
+        <div class="card-body"><canvas id="deptChart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Monthly Trend</div></div>
+        <div class="card-body"><canvas id="trendChart" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Sentiment Summary (from Task 2) -->
+    <div class="card">
+      <div class="card-header" style="padding-bottom:12px;">
+        <div class="card-title">🧠 Sentiment Analysis Summary</div>
+        <a href="http://127.0.0.1:5000" target="_blank" class="view-all-link">Open Analyzer →</a>
+      </div>
+      <div class="card-body" id="sentiment-summary">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          <div style="background:var(--bg);border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;" id="ss-total">—</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Total Analyzed</div>
+          </div>
+          <div style="background:#ecfdf5;border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#065f46;" id="ss-positive">—</div>
+            <div style="font-size:12px;color:#065f46;margin-top:4px;">Positive</div>
+          </div>
+          <div style="background:#fef2f2;border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#b91c1c;" id="ss-negative">—</div>
+            <div style="font-size:12px;color:#b91c1c;margin-top:4px;">Negative</div>
+          </div>
+          <div style="background:#fef2f2;border-radius:10px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#b91c1c;" id="ss-angry">—</div>
+            <div style="font-size:12px;color:#b91c1c;margin-top:4px;">Angry Tone</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api';
+const SENTIMENT_API = 'http://127.0.0.1:5000';
+
+async function loadAnalytics() {
+  const stats = await fetch(`${API}/stats/`).then(r=>r.json()).catch(()=>null);
+  if (!stats) return;
+
+  const ov = stats.overview;
+  const total = ov.total_complaints || 1;
+  const resolved = ov.resolved || 0;
+
+  document.getElementById('a-total').textContent = total;
+  document.getElementById('a-rate').textContent  = Math.round((resolved/total)*100) + '%';
+  document.getElementById('a-high').textContent  = stats.by_priority?.High || 0;
+
+  const bs = stats.by_status    || {};
+  const bp = stats.by_priority  || {};
+  const bd = stats.by_department|| [];
+
+  // Status Chart
+  new Chart(document.getElementById('statusChart'), {
+    type:'doughnut',
+    data:{
+      labels:['Open','In Progress','Resolved','Closed'],
+      datasets:[{
+        data:[bs.Open||0, bs['In Progress']||0, bs.Resolved||0, bs.Closed||0],
+        backgroundColor:['#3b82f6','#f59e0b','#10b981','#94a3b8'],
+        borderWidth:0
+      }]
+    },
+    options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}
+  });
+
+  // Priority Chart
+  new Chart(document.getElementById('priorityChart2'), {
+    type:'bar',
+    data:{
+      labels:['High','Medium','Low'],
+      datasets:[{
+        label:'Complaints',
+        data:[bp.High||0, bp.Medium||0, bp.Low||0],
+        backgroundColor:['#ef4444','#f59e0b','#10b981'],
+        borderRadius:6
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}
+  });
+
+  // Dept Chart
+  if (bd.length) {
+    new Chart(document.getElementById('deptChart'), {
+      type:'bar',
+      data:{
+        labels: bd.map(d=>d.name),
+        datasets:[{label:'Total',data:bd.map(d=>d.total),backgroundColor:'#3b82f6',borderRadius:6}]
+      },
+      options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#f1f5f9'}},y:{grid:{display:false}}}}
+    });
+  }
+
+  // Trend Chart (simulated)
+  new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[
+        {label:'Submitted',data:[4,7,5,9,12,8,15,11,13,7,10,total],borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.07)',fill:true,tension:0.4,pointRadius:4},
+        {label:'Resolved', data:[2,5,4,7,10,6,12,9,11,5,8,resolved],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.07)',fill:true,tension:0.4,pointRadius:4}
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}
+  });
+}
+
+async function loadSentimentStats() {
+  try {
+    const data = await fetch(`${SENTIMENT_API}/stats`).then(r=>r.json());
+    document.getElementById('ss-total').textContent    = data.total    || '—';
+    document.getElementById('ss-positive').textContent = data.positive || '—';
+    document.getElementById('ss-negative').textContent = data.negative || '—';
+    document.getElementById('ss-angry').textContent    = data.angry    || '—';
+  } catch {
+    // Sentiment service might not be running
+    document.getElementById('ss-total').textContent = 'N/A';
+  }
+}
+
+loadAnalytics();
+loadSentimentStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Assistant — CSM</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .chat-wrapper  { display: grid; grid-template-columns: 1fr 300px; gap: 20px; height: calc(100vh - 120px); }
+    .chat-main     { display: flex; flex-direction: column; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .msg           { max-width: 75%; padding: 12px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; }
+    .msg-user      { align-self: flex-end; background: var(--blue); color: white; border-bottom-right-radius: 4px; }
+    .msg-ai        { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+    .msg-time      { font-size: 10px; opacity: 0.65; margin-top: 4px; }
+    .chat-input-row{ display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface); }
+    .chat-input    { flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 13.5px; outline: none; font-family: inherit; }
+    .chat-input:focus { border-color: var(--blue); }
+    .typing-dot    { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); animation: blink 1.4s infinite; margin-right: 3px; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+    .quick-btn     { padding: 7px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: white; font-size: 12px; cursor: pointer; transition: all 0.15s; text-align: left; width: 100%; margin-bottom: 6px; }
+    .quick-btn:hover { background: var(--blue-light); border-color: var(--blue); color: var(--blue); }
+    .sidebar-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; overflow-y: auto; }
+    .note          { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400e; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">CQ</div>
+    <div><div class="logo-text">ComplaintIQ</div><div class="logo-sub">SMART MANAGEMENT</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="index.html"><span class="icon">⊞</span> Dashboard</a>
+    <a class="nav-item" href="index.html"><span class="icon">⚑</span> Complaints</a>
+    <a class="nav-item" href="index.html"><span class="icon">▦</span> Departments</a>
+    <a class="nav-item" href="index.html"><span class="icon">♟</span> Staff</a>
+    <div class="nav-section-label" style="margin-top:12px">Tools</div>
+    <a class="nav-item active" href="ai-assistant.html"><span class="icon">🤖</span> AI Assistant</a>
+    <a class="nav-item" href="analytics.html"><span class="icon">📊</span> Analytics</a>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <div class="topbar-title">AI Support Assistant</div>
+    <div class="topbar-actions">
+      <button class="btn-primary" onclick="clearChat()" style="font-size:12px;padding:7px 12px;">Clear Chat</button>
+      <div class="user-avatar">AD</div>
+    </div>
+  </header>
+
+  <div class="page-content" style="padding:20px;">
+    <div class="note">
+      ⚠️ This is a simulated AI assistant panel. To use the full AI (Gemini), run <code>python ai_support_module/main.py</code> in your terminal.
+    </div>
+
+    <div class="chat-wrapper">
+      <!-- CHAT MAIN -->
+      <div class="card chat-main" style="padding:0;overflow:hidden;">
+        <div class="chat-messages" id="chat-messages">
+          <!-- Welcome message -->
+          <div class="msg msg-ai">
+            👋 Hello! I'm your Smart Complaint AI Assistant.<br><br>
+            I can help you:<br>
+            • Check complaint status<br>
+            • Guide on escalation<br>
+            • Answer support questions<br><br>
+            Type a message or use the quick prompts →
+            <div class="msg-time">Just now</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" type="text"
+            placeholder="Ask about complaint status, escalation, helplines..."
+            onkeypress="if(event.key==='Enter') sendMessage()"/>
+          <button class="btn-primary" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- SIDEBAR PANEL -->
+      <div class="sidebar-panel">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Quick Prompts</div>
+        <button class="quick-btn" onclick="quickSend('How do I escalate an unresolved complaint?')">How do I escalate a complaint?</button>
+        <button class="quick-btn" onclick="quickSend('What are the complaint status stages?')">What are the status stages?</button>
+        <button class="quick-btn" onclick="quickSend('How long does resolution take?')">How long does resolution take?</button>
+        <button class="quick-btn" onclick="quickSend('What is the electricity board helpline number?')">Electricity helpline number</button>
+        <button class="quick-btn" onclick="quickSend('How do I register a new complaint?')">Register a new complaint</button>
+        <button class="quick-btn" onclick="quickSend('Check status of complaint 1')">Check complaint #1</button>
+
+        <div style="font-size:13px;font-weight:700;margin:20px 0 12px;">Live Stats</div>
+        <div style="font-size:12px;" id="panel-stats">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text-muted);">Total</span>
+            <span style="font-weight:600;" id="ps-total">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="color:var(--text-muted);">Open</span>
+            <span style="font-weight:600;color:var(--blue);" id="ps-open">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="color:var(--text-muted);">Resolved</span>
+            <span style="font-weight:600;color:var(--green);" id="ps-resolved">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8000/api';
+
+// Simulated AI responses for demo (real AI runs in Python terminal)
+const RESPONSES = {
+  'escalate': "To escalate a complaint: 1) Wait 48 hours after assignment. 2) Contact the department head directly. 3) Use the 'Change Status' option to flag as high priority. 4) Note your complaint ID for reference.",
+  'status stages': "Complaint stages are: Open (just submitted) → In Progress (staff assigned) → Resolved (issue fixed) → Closed (confirmed & archived). You can track this via the Track Complaint section.",
+  'resolution': "Resolution time varies: Low priority (5-7 days), Medium priority (2-3 days), High priority (24-48 hours). If unresolved after these timeframes, consider escalating.",
+  'electricity': "Electricity Board helplines: BESCOM (Bangalore): 1912 | KSEB: 1800-425-4455 | MSEDCL: 1800-212-3435 | BSES: 19123. Available 24/7 for emergencies.",
+  'register': "To register a complaint: 1) Click '+ New Complaint' on the dashboard. 2) Enter a clear title and detailed description. 3) Select the relevant department. 4) Submit — your complaint ID will be generated automatically.",
+  'default': "I understand your query. For specific complaint status, please provide the complaint ID. For general support, our team is available Monday-Saturday 9AM-6PM. You can also visit the Admin Panel at localhost:8000/admin for detailed management.",
+};
+
+function getResponse(msg) {
+  const lower = msg.toLowerCase();
+  if (lower.includes('escalat')) return RESPONSES.escalate;
+  if (lower.includes('status') && lower.includes('stage')) return RESPONSES['status stages'];
+  if (lower.includes('resolution') || lower.includes('how long')) return RESPONSES.resolution;
+  if (lower.includes('electric') || lower.includes('helpline')) return RESPONSES.electricity;
+  if (lower.includes('register') || lower.includes('new complaint')) return RESPONSES.register;
+  if (lower.match(/complaint\s*#?\d+|check.*\d+/)) {
+    const match = lower.match(/\d+/);
+    const id = match ? match[0] : '?';
+    return `Let me check complaint #${id} for you... Based on system data, please use the Track Complaint page or run the AI Support Module (python ai_support_module/main.py) for live data from the Django API.`;
+  }
+  return RESPONSES.default;
+}
+
+function addMessage(text, role) {
+  const msgs = document.getElementById('chat-messages');
+  const time  = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+  const div   = document.createElement('div');
+  div.className = `msg msg-${role}`;
+  div.innerHTML = text.replace(/\n/g, '<br>') + `<div class="msg-time">${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.id     = 'typing-indicator';
+  div.className = 'msg msg-ai';
+  div.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addMessage(msg, 'user');
+  showTyping();
+
+  setTimeout(() => {
+    removeTyping();
+    addMessage(getResponse(msg), 'ai');
+  }, 800 + Math.random() * 600);
+}
+
+function quickSend(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function clearChat() {
+  const msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = '';
+  addMessage("Chat cleared! How can I help you?", 'ai');
+}
+
+// Load stats
+fetch(`${API}/stats/`).then(r=>r.json()).then(data => {
+  document.getElementById('ps-total').textContent    = data.overview?.total_complaints || '—';
+  document.getElementById('ps-open').textContent     = data.by_status?.Open || '—';
+  document.getElementById('ps-resolved').textContent = data.overview?.resolved || '—';
+}).catch(() => {});
+</script>
+</body>
+</html>

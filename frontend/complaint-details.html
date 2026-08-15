@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complaint Details — CSM</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .field-row   { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .field-row:last-child { border-bottom: none; }
+    .field-key   { color: var(--text-muted); font-weight: 500; }
+    .field-val   { font-weight: 600; }
+    .timeline-item { display: flex; gap: 14px; margin-bottom: 20px; }
+    .tl-dot      { width: 12px; height: 12px; border-radius: 50%; background: var(--blue); flex-shrink: 0; margin-top: 3px; }
+    .tl-line     { position: absolute; left: 5px; top: 15px; bottom: -20px; width: 2px; background: var(--border); }
+    .tl-wrap     { position: relative; }
+    .back-btn    { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); cursor: pointer; margin-bottom: 16px; text-decoration: none; }
+    .back-btn:hover { color: var(--blue); }
+    .input-id    { display: flex; gap: 10px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">CQ</div>
+    <div><div class="logo-text">ComplaintIQ</div><div class="logo-sub">SMART MANAGEMENT</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="index.html"><span class="icon">⊞</span> Dashboard</a>
+    <a class="nav-item active" href="#"><span class="icon">⚑</span> Complaints</a>
+    <a class="nav-item" href="index.html#"><span class="icon">▦</span> Departments</a>
+    <a class="nav-item" href="index.html#"><span class="icon">♟</span> Staff</a>
+    <div class="nav-section-label" style="margin-top:12px">Tools</div>
+    <a class="nav-item" href="ai-assistant.html"><span class="icon">🤖</span> AI Assistant</a>
+    <a class="nav-item" href="analytics.html"><span class="icon">📊</span> Analytics</a>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <div class="topbar-title">Complaint Details</div>
+    <div class="topbar-actions">
+      <div class="user-avatar">AD</div>
+    </div>
+  </header>
+
+  <div class="page-content">
+    <a class="back-btn" href="index.html">← Back to Dashboard</a>
+
+    <div class="input-id">
+      <input id="cid-input" type="number" class="search-input" placeholder="Enter Complaint ID..." style="max-width:260px;"/>
+      <button class="btn-primary" onclick="loadDetail()">Load Complaint</button>
+    </div>
+
+    <div id="detail-container" style="display:none;">
+      <div class="page-header">
+        <div>
+          <h1 id="d-title">—</h1>
+          <p id="d-sub">Loading...</p>
+        </div>
+        <div style="display:flex;gap:8px;" id="d-badges"></div>
+      </div>
+
+      <div class="detail-grid">
+        <!-- LEFT: Fields -->
+        <div>
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header"><div class="card-title">Complaint Information</div></div>
+            <div class="card-body">
+              <div class="field-row"><span class="field-key">Complaint ID</span><span class="field-val" id="f-id">—</span></div>
+              <div class="field-row"><span class="field-key">Department</span><span class="field-val" id="f-dept">—</span></div>
+              <div class="field-row"><span class="field-key">Raised By</span><span class="field-val" id="f-by">—</span></div>
+              <div class="field-row"><span class="field-key">Status</span><span class="field-val" id="f-status">—</span></div>
+              <div class="field-row"><span class="field-key">Priority</span><span class="field-val" id="f-priority">—</span></div>
+              <div class="field-row"><span class="field-key">Created</span><span class="field-val" id="f-date">—</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title">Description</div></div>
+            <div class="card-body">
+              <p id="f-desc" style="font-size:14px;line-height:1.7;color:var(--text-muted);">—</p>
+            </div>
+          </div>
+
+          <!-- Update Status -->
+          <div class="card" style="margin-top:20px;">
+            <div class="card-header"><div class="card-title">Update Status</div></div>
+            <div class="card-body" style="display:flex;gap:10px;">
+              <select id="new-status" class="filter-select" style="flex:1;">
+                <option>Open</option>
+                <option>In Progress</option>
+                <option>Resolved</option>
+                <option>Closed</option>
+              </select>
+              <button class="btn-primary" onclick="updateStatus()">Update</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Timeline -->
+        <div class="card">
+          <div class="card-header" style="padding-bottom:12px;"><div class="card-title">Timeline</div></div>
+          <div class="card-body" id="timeline-body">
+            <div style="color:var(--text-muted);font-size:13px;">No timeline yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="empty-detail" class="card" style="text-align:center;padding:48px;">
+      <div style="font-size:40px;margin-bottom:12px;">🔍</div>
+      <p style="color:var(--text-muted);">Enter a Complaint ID above to view details.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+const API = 'http://127.0.0.1:8000/api';
+let currentId = null;
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function statusBadge(s) {
+  const m = {'Open':'badge-open','In Progress':'badge-progress','Resolved':'badge-resolved','Closed':'badge-closed'};
+  return `<span class="badge ${m[s]||'badge-closed'}">${s}</span>`;
+}
+function priorityBadge(p) {
+  const m = {'High':'badge-high','Medium':'badge-medium','Low':'badge-low'};
+  return `<span class="badge ${m[p]||''}">${p}</span>`;
+}
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+
+async function loadDetail() {
+  const id = document.getElementById('cid-input').value;
+  if (!id) { toast('Enter a complaint ID'); return; }
+  currentId = id;
+
+  const [detail, track] = await Promise.all([
+    fetch(`${API}/complaints/${id}/`).then(r=>r.json()).catch(()=>null),
+    fetch(`${API}/complaints/${id}/track/`).then(r=>r.json()).catch(()=>null),
+  ]);
+
+  if (!detail || detail.detail === 'Not found.') {
+    toast('Complaint not found'); return;
+  }
+
+  document.getElementById('empty-detail').style.display = 'none';
+  document.getElementById('detail-container').style.display = 'block';
+
+  document.getElementById('d-title').textContent = detail.title;
+  document.getElementById('d-sub').textContent   = `Complaint #${detail.id} · ${detail.department_name||'—'}`;
+  document.getElementById('d-badges').innerHTML  = statusBadge(detail.status) + ' ' + priorityBadge(detail.priority);
+  document.getElementById('f-id').textContent    = '#' + detail.id;
+  document.getElementById('f-dept').textContent  = detail.department_name || '—';
+  document.getElementById('f-by').textContent    = detail.created_by;
+  document.getElementById('f-status').innerHTML  = statusBadge(detail.status);
+  document.getElementById('f-priority').innerHTML= priorityBadge(detail.priority);
+  document.getElementById('f-date').textContent  = fmtDate(detail.created_at);
+  document.getElementById('f-desc').textContent  = detail.description;
+
+  if (track && track.timeline) {
+    document.getElementById('timeline-body').innerHTML = track.timeline.map((t,i) => `
+      <div class="timeline-item">
+        <div class="tl-wrap">
+          <div class="tl-dot" style="${i===track.timeline.length-1?'':'background:var(--border);'}"></div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;">${t.event}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${t.detail}</div>
+          <div style="font-size:11px;color:var(--text-light);margin-top:2px;">${fmtDate(t.timestamp)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+async function updateStatus() {
+  if (!currentId) { toast('Load a complaint first'); return; }
+  const status = document.getElementById('new-status').value;
+  const res = await fetch(`${API}/complaints/${currentId}/status/`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  });
+  if (res.ok) { toast(`✅ Status updated to "${status}"`); loadDetail(); }
+  else toast('Failed to update status');
+}
+
+// Auto-load if URL has ?id=
+const urlId = new URLSearchParams(window.location.search).get('id');
+if (urlId) { document.getElementById('cid-input').value = urlId; loadDetail(); }
+</script>
+</body>
+</html>
