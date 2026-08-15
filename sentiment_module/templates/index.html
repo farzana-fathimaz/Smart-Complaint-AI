@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SentimentIQ — Complaint Analyzer</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">SI</div>
+      <div>
+        <div class="logo-text">SentimentIQ</div>
+        <div class="logo-sub">COMPLAINT ANALYZER</div>
+      </div>
+    </div>
+    <nav>
+      <a class="nav-item active" href="#">⊞ Dashboard</a>
+      <a class="nav-item" href="#history-section">📋 History</a>
+      <a class="nav-item" href="http://127.0.0.1:8000/api/complaints/" target="_blank">⧉ CSM API</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="font-size:11px;color:var(--text-muted);">Powered by TextBlob + Flask</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-title">Sentiment Dashboard</div>
+      <div id="topbar-date" class="topbar-date"></div>
+    </header>
+
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Analyzed</div>
+          <div class="stat-value" id="s-total">—</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Positive</div>
+          <div class="stat-value" id="s-positive">—</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Negative</div>
+          <div class="stat-value" id="s-negative">—</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Angry Tone</div>
+          <div class="stat-value" id="s-angry">—</div>
+        </div>
+      </div>
+
+      <!-- ANALYZER CARD -->
+      <div class="card analyzer-card">
+        <div class="card-title">🔍 Analyze Complaint Text</div>
+        <div class="card-sub">Paste or type a complaint message to detect its sentiment</div>
+
+        <textarea id="complaint-text"
+          placeholder="e.g. The water supply has been broken for 3 days and nobody is fixing it. This is completely unacceptable!"
+        ></textarea>
+
+        <div class="char-count"><span id="char-count">0</span> characters</div>
+
+        <button class="btn-analyze" onclick="analyzeText()" id="analyze-btn">
+          Analyze Sentiment
+        </button>
+      </div>
+
+      <!-- RESULT CARD (hidden by default) -->
+      <div class="card result-card" id="result-card" style="display:none;">
+        <div class="result-header">
+          <div class="result-emoji" id="result-emoji">😐</div>
+          <div>
+            <div class="result-tone" id="result-tone">—</div>
+            <div class="result-label" id="result-label">—</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <div class="metric-label">Polarity</div>
+            <div class="metric-value" id="metric-polarity">—</div>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar" id="bar-polarity"></div>
+            </div>
+            <div class="metric-hint">-1.0 (negative) → +1.0 (positive)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Subjectivity</div>
+            <div class="metric-value" id="metric-subjectivity">—</div>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar green" id="bar-subjectivity"></div>
+            </div>
+            <div class="metric-hint">0.0 (objective) → 1.0 (subjective)</div>
+          </div>
+        </div>
+
+        <div class="result-text" id="result-text-display"></div>
+      </div>
+
+      <!-- HISTORY TABLE -->
+      <div class="card" id="history-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="card-title">📋 Analysis History</div>
+          <button class="btn-clear" onclick="clearHistory()">Clear All</button>
+        </div>
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Complaint Text</th><th>Polarity</th>
+              <th>Subjectivity</th><th>Label</th><th>Tone</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">
+              No history yet.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- end content -->
+  </main>
+</div><!-- end app-layout -->
+
+<div id="toast"></div>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
