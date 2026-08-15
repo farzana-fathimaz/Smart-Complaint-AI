@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+*.log
+
+# Node
+node_modules/
+.npm/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated images
+generated_images/
+chat_history.json
+sentiment_history.db
